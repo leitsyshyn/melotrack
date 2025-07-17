@@ -4,6 +4,7 @@ import { check, integer, pgTable, varchar } from "drizzle-orm/pg-core";
 export const gamesTable = pgTable("games", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   name: varchar({ length: 255 }).notNull(),
+  gap: integer().notNull().default(5),
 });
 
 export const roundsTable = pgTable("rounds", {
@@ -12,7 +13,7 @@ export const roundsTable = pgTable("rounds", {
     .notNull()
     .references(() => gamesTable.id),
   name: varchar({ length: 255 }).notNull(),
-  gap: integer().notNull().default(5),
+  gap: integer().notNull().default(3),
   position: integer().notNull(),
 });
 
