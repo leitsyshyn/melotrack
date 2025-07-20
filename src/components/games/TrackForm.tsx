@@ -1,47 +1,64 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 
-import { createTrack } from "@/actions/tracks";
+import { createTrack, updateTrack } from "@/actions/tracks";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { trackInsertSchema } from "@/lib/schemas";
 import { TrackInsertType } from "@/lib/types";
 
-type CreateTrackFormProps = Partial<Omit<TrackInsertType, "roundId">> &
-  Pick<TrackInsertType, "roundId">;
+type TrackFormProps = Partial<Omit<TrackInsertType, "roundId">> &
+  Pick<TrackInsertType, "roundId"> & {
+    onSuccess?: () => void;
+  };
 
-export function CreateTrackForm(track: CreateTrackFormProps) {
+export function TrackForm(props: TrackFormProps) {
   const form = useForm<TrackInsertType>({
     resolver: zodResolver(trackInsertSchema),
     defaultValues: {
       url: "",
       title: "",
-      artist: "",
       start: 0,
       end: 0,
-      ...track,
+      ...props,
     },
   });
 
   const onSubmit = (values: TrackInsertType) => {
-    createTrack(values);
+    if (props.id) {
+      updateTrack(values, props.id);
+    } else if (props.roundId) {
+      createTrack(values);
+    }
     form.reset();
+    props.onSuccess?.();
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex gap-2">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="flex flex-col gap-2"
+      >
         <FormField
           control={form.control}
           name="url"
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Input placeholder="Track URL" {...field} />
+                <Input placeholder="URL" {...field} />
               </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -53,21 +70,7 @@ export function CreateTrackForm(track: CreateTrackFormProps) {
               <FormControl>
                 <Input placeholder="Title" {...field} />
               </FormControl>
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="artist"
-          render={({ field }) => (
-            <FormItem>
-              <FormControl>
-                <Input
-                  placeholder="Artist"
-                  {...field}
-                  value={field.value ?? ""}
-                />
-              </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -76,7 +79,7 @@ export function CreateTrackForm(track: CreateTrackFormProps) {
             control={form.control}
             name="start"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex-1">
                 <FormControl>
                   <Input
                     type="number"
@@ -87,6 +90,7 @@ export function CreateTrackForm(track: CreateTrackFormProps) {
                     onChange={(e) => field.onChange(Number(e.target.value))}
                   />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -94,7 +98,7 @@ export function CreateTrackForm(track: CreateTrackFormProps) {
             control={form.control}
             name="end"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="flex-1">
                 <FormControl>
                   <Input
                     type="number"
@@ -105,6 +109,7 @@ export function CreateTrackForm(track: CreateTrackFormProps) {
                     onChange={(e) => field.onChange(Number(e.target.value))}
                   />
                 </FormControl>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -112,9 +117,15 @@ export function CreateTrackForm(track: CreateTrackFormProps) {
         <Button
           type="submit"
           disabled={form.formState.isSubmitting}
-          className="w-32"
+          className="mt-2 h-13.5"
         >
-          {form.formState.isSubmitting ? "Creating…" : "Create"}
+          {form.formState.isSubmitting ? (
+            <Loader2 className="animate-spin" />
+          ) : props.id ? (
+            "Save"
+          ) : (
+            "Add"
+          )}
         </Button>
       </form>
     </Form>

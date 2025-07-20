@@ -13,7 +13,7 @@ import { RoundInsertType } from "@/lib/types";
 type CreateRoundFormProps = Partial<
   Omit<RoundInsertType, "gameId" | "position">
 > &
-  Pick<RoundInsertType, "gameId" | "position">;
+  Pick<RoundInsertType, "gameId">;
 
 export function CreateRoundForm(round: CreateRoundFormProps) {
   const form = useForm<RoundInsertType>({

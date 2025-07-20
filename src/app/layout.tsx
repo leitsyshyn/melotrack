@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 
-import { PlayerProvider } from "@/contexts/PlayerContext";
+import Providers from "@/app/providers";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -26,13 +27,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <PlayerProvider>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        >
-          {children}
-        </body>
-      </PlayerProvider>
+      <head>
+        <Script
+          src="https://www.youtube.com/iframe_api"
+          strategy="beforeInteractive"
+        />
+      </head>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

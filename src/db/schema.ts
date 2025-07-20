@@ -1,30 +1,48 @@
 import { relations, sql } from "drizzle-orm";
-import { check, integer, pgTable, varchar } from "drizzle-orm/pg-core";
+import {
+  check,
+  integer,
+  pgTable,
+  serial,
+  unique,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 
 export const gamesTable = pgTable("games", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  id: uuid().defaultRandom().primaryKey(),
   name: varchar({ length: 255 }).notNull(),
   gap: integer().notNull().default(5),
 });
 
-export const roundsTable = pgTable("rounds", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  gameId: integer()
-    .notNull()
-    .references(() => gamesTable.id),
-  name: varchar({ length: 255 }).notNull(),
-  gap: integer().notNull().default(3),
-  position: integer().notNull(),
-});
+export const roundsTable = pgTable(
+  "rounds",
+  {
+    id: uuid().defaultRandom().primaryKey(),
+    gameId: uuid()
+      .notNull()
+      .references(() => gamesTable.id),
+    name: varchar({ length: 255 }).notNull(),
+    gap: integer().notNull().default(3),
+    position: serial().notNull(),
+  },
+  (table) => ({
+    roundPosUnique: unique().on(table.gameId, table.position), // Deferred in pg
+    roundPosNonNegative: check(
+      "round_pos_non_negative",
+      sql`${table.position} >= 0`,
+    ),
+  }),
+);
 
 export const tracksTable = pgTable(
   "tracks",
   {
-    id: integer().primaryKey().generatedAlwaysAsIdentity(),
-    roundId: integer()
+    id: uuid().defaultRandom().primaryKey(),
+    roundId: uuid()
       .notNull()
       .references(() => roundsTable.id),
-    position: integer().notNull(),
+    position: serial().notNull(),
     url: varchar({ length: 2048 }).notNull(),
     start: integer().notNull(),
     end: integer().notNull(),
@@ -32,14 +50,19 @@ export const tracksTable = pgTable(
     artist: varchar({ length: 255 }),
   },
   (table) => ({
+    trackPosUnique: unique().on(table.roundId, table.position), // Deferred in pg
+    trackPosNonNegative: check(
+      "track_pos_non_negative",
+      sql`${table.position} >= 0`,
+    ),
     urlValid: check(
       "url_valid",
-      sql`${table.url} ~* '^https?://[\\w.-]+(?:\\.[\\w.-]+)+(:\\d+)?(/[^\\s]*)?$'`
+      sql`${table.url} ~* '^https?://[\\w.-]+(?:\\.[\\w.-]+)+(:\\d+)?(/[^\\s]*)?$'`,
     ),
     startNonNegative: check("start_non_negative", sql`${table.start} >= 0`),
     endNonNegative: check("end_non_negative", sql`${table.end} >= 0`),
     endAfterStart: check("end_after_start", sql`${table.end} > ${table.start}`),
-  })
+  }),
 );
 
 export const gamesRelations = relations(gamesTable, ({ many }) => ({
