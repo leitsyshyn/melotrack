@@ -5,12 +5,11 @@ import { arrayMove, move } from "@dnd-kit/helpers";
 import { DragDropProvider, DragOverlay } from "@dnd-kit/react";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
 import { addSeconds, format } from "date-fns";
-import { GripHorizontal, GripVertical, Plus } from "lucide-react";
-import { forwardRef, useRef, useState } from "react";
+import { Edit, GripHorizontal, GripVertical, Plus } from "lucide-react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 
-import { deleteTrack } from "@/actions/tracks";
-import { DeleteButton } from "@/components/games/DeleteButton";
-import { EditButton } from "@/components/games/EditButton";
+import DeleteDialog from "@/components/games/DeleteDialog";
+import RoundDialog from "@/components/games/RoundDialog";
 import TrackDialog from "@/components/games/TrackDialog";
 import { PlayButton } from "@/components/player/PlayButton";
 import { Button } from "@/components/ui/button";
@@ -21,6 +20,8 @@ import {
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useReorder } from "@/mutations/reorder";
+import { useDeleteRound } from "@/mutations/rounds";
+import { useDeleteTrack } from "@/mutations/tracks";
 
 const toColumnMap = (rounds: RoundSelectWithTracksType[]) =>
   Object.fromEntries(rounds.map((r) => [r.id, r.tracks]));
@@ -29,6 +30,10 @@ export function Board({ game }: { game: GameSelectWithRoundsWithTracksType }) {
   const [data, setData] = useState(game.rounds);
   const previous = useRef(data);
   const mutation = useReorder(game.id);
+
+  useEffect(() => {
+    setData(game.rounds);
+  }, [game.rounds]);
 
   if (!data) return null;
 
@@ -70,10 +75,25 @@ export function Board({ game }: { game: GameSelectWithRoundsWithTracksType }) {
           }
         }}
       >
-        <div className="flex flex-row flex-wrap gap-4">
+        <div className="flex flex-row gap-4 overflow-x-auto pb-4">
           {data.map((round, columnIndex) => (
             <RoundColumn key={round.id} index={columnIndex} round={round} />
           ))}
+          <div className="flex-1">
+            <RoundDialog
+              gameId={game.id}
+              dialogTitle="Add Round"
+              dialogDescription="Add a new round to this game"
+            >
+              <Button
+                className="h-full w-full min-w-100 flex-col justify-center rounded-xl"
+                variant={"outline"}
+              >
+                <Plus />
+                Add Round
+              </Button>
+            </RoundDialog>
+          </div>
         </div>
         <DragOverlay>
           {(source) => {
@@ -84,7 +104,7 @@ export function Board({ game }: { game: GameSelectWithRoundsWithTracksType }) {
                 <Round
                   round={round}
                   isDragging={source.isDragging}
-                  className="data-[dragging=true]:scale-102"
+                  className="data-[dragging=true]:scale-102 data-[dragging=true]:shadow-2xl"
                 />
               );
             } else if (source.type === "item") {
@@ -95,8 +115,9 @@ export function Board({ game }: { game: GameSelectWithRoundsWithTracksType }) {
               return (
                 <Track
                   track={track}
+                  gameId={game.id}
                   isDragging={source.isDragging}
-                  className="data-[dragging=true]:scale-102"
+                  className="data-[dragging=true]:scale-102 data-[dragging=true]:shadow-2xl"
                 />
               );
             } else return null;
@@ -128,7 +149,7 @@ export function RoundColumn({ index, round, className }: RoundColumnProps) {
       ref={ref}
       handleRef={handleRef}
       isDragging={isDragging}
-      className={cn("data-[dragging=true]:opacity-50", className)}
+      className={cn("flex-1 data-[dragging=true]:opacity-50", className)}
     />
   );
 }
@@ -143,12 +164,13 @@ const Round = forwardRef<HTMLDivElement, RoundProps>(function Round(
   { round, className, handleRef, isDragging },
   ref,
 ) {
+  const mutation = useDeleteRound(round.gameId, round.id);
   return (
     <section
       ref={ref}
       data-dragging={isDragging}
       className={cn(
-        "bg-muted flex min-w-100 flex-col gap-4 rounded-xl border p-4",
+        "bg-muted group/round flex min-w-100 flex-col gap-4 rounded-xl border p-4",
         "ease scale-100 shadow-xs transition-all duration-200",
         className,
       )}
@@ -158,14 +180,32 @@ const Round = forwardRef<HTMLDivElement, RoundProps>(function Round(
           <PlayButton round={round} />
           <h3>{round.name}</h3>
         </div>
-        <Button
-          variant={"ghost"}
-          size={"icon"}
-          ref={handleRef}
-          className="w-min p-1"
-        >
-          <GripHorizontal />
-        </Button>
+        <div className="flex items-center">
+          <div className="item-center flex opacity-0 transition-all duration-200 group-hover/round:opacity-100">
+            <RoundDialog
+              {...round}
+              dialogTitle="Edit Round"
+              dialogDescription="Edit the details of this round"
+            >
+              <Button variant="ghost" size={"icon"}>
+                <Edit />
+              </Button>
+            </RoundDialog>
+            <DeleteDialog
+              deleteMutation={mutation}
+              dialogTitle="Delete Round"
+              dialogDescription="Are you sure you want to delete this round?"
+            />
+          </div>
+          <Button
+            variant={"ghost"}
+            size={"icon"}
+            ref={handleRef}
+            className="w-min p-1"
+          >
+            <GripHorizontal />
+          </Button>
+        </div>
       </div>
       <ul className="flex flex-col gap-2">
         {round.tracks.map((track, index) => (
@@ -174,9 +214,11 @@ const Round = forwardRef<HTMLDivElement, RoundProps>(function Round(
             index={index}
             column={round.id}
             track={track}
+            gameId={round.gameId}
           />
         ))}
         <TrackDialog
+          gameId={round.gameId}
           roundId={round.id}
           dialogTitle={`Add Track`}
           dialogDescription={`Add a new track to ${round.name}`}
@@ -197,21 +239,23 @@ function formatSeconds(sec: number) {
 
 export interface TrackProps {
   track: TrackSelectType;
+  gameId: string;
   className?: string;
   handleRef?: (node: HTMLElement | null) => void;
   isDragging?: boolean;
 }
 
 export const Track = forwardRef<HTMLLIElement, TrackProps>(function Track(
-  { track, className, handleRef, isDragging },
+  { track, className, handleRef, isDragging, gameId },
   ref,
 ) {
+  const mutation = useDeleteTrack(gameId, track.roundId, track.id);
   return (
     <li
       ref={ref}
       data-dragging={isDragging}
       className={cn(
-        "group flex items-center justify-between rounded-md border bg-white p-2",
+        "group/track flex items-center justify-between rounded-md border bg-white p-2",
         "ease scale-100 shadow-xs transition-all duration-200",
         className,
       )}
@@ -221,19 +265,26 @@ export const Track = forwardRef<HTMLLIElement, TrackProps>(function Track(
         <div>{track.title}</div>
       </div>
       <div className="flex items-center">
-        <div className="ease flex items-center opacity-0 transition-all duration-200 group-hover:opacity-100">
-          <div className="hidden items-center group-hover:flex">
+        <div className="ease flex items-center opacity-0 transition-all duration-200 group-hover/track:opacity-100">
+          <div className="hidden items-center group-hover/track:flex">
             <TrackDialog
               {...track}
+              gameId={gameId}
               dialogTitle="Edit Track"
               dialogDescription="Edit the details of this track"
             >
-              <EditButton />
+              <Button variant="ghost" size={"icon"}>
+                <Edit />
+              </Button>
             </TrackDialog>
-            <DeleteButton onClick={() => deleteTrack(track.id)} />
+            <DeleteDialog
+              deleteMutation={mutation}
+              dialogTitle="Delete Track"
+              dialogDescription="Are you sure you want to delete this track?"
+            />
           </div>
         </div>
-        <div className="text-muted-foreground flex items-center px-2 text-sm group-hover:hidden">
+        <div className="text-muted-foreground flex items-center px-2 text-sm group-hover/track:hidden">
           {formatSeconds(track.start)} – {formatSeconds(track.end)}
         </div>
         <Button
@@ -253,10 +304,17 @@ export interface TrackItemProps {
   index: number;
   column?: string;
   track: TrackSelectType;
+  gameId: string;
   className?: string;
 }
 
-export function TrackItem({ index, column, track, className }: TrackItemProps) {
+export function TrackItem({
+  index,
+  column,
+  track,
+  gameId,
+  className,
+}: TrackItemProps) {
   const { ref, handleRef, isDragging } = useSortable({
     id: track.id,
     index,
@@ -268,6 +326,7 @@ export function TrackItem({ index, column, track, className }: TrackItemProps) {
   return (
     <Track
       track={track}
+      gameId={gameId}
       ref={ref}
       handleRef={handleRef}
       isDragging={isDragging}

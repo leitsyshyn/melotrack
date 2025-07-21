@@ -7,24 +7,26 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { gameInsertSchema } from "@/lib/schemas";
-import { GameInsertType } from "@/lib/types";
-import { useCreateGame, useUpdateGame } from "@/mutations/games";
+import { roundInsertSchema } from "@/lib/schemas";
+import { RoundInsertType } from "@/lib/types";
+import { useCreateRound, useUpdateRound } from "@/mutations/rounds";
 
-type GameFormProps = Partial<GameInsertType> & {
-  onSuccess?: () => void;
-};
+type RoundFormProps = Partial<Omit<RoundInsertType, "gameId" | "position">> &
+  Pick<RoundInsertType, "gameId"> & { onSuccess?: () => void };
 
-export function GameForm(props: GameFormProps) {
-  const form = useForm<GameInsertType>({
-    resolver: zodResolver(gameInsertSchema),
-    defaultValues: { name: "", ...props },
+export function RoundForm(props: RoundFormProps) {
+  const form = useForm<RoundInsertType>({
+    resolver: zodResolver(roundInsertSchema),
+    defaultValues: {
+      name: "",
+      ...props,
+    },
   });
 
-  const createMutation = useCreateGame();
-  const updateMutation = useUpdateGame(props.id ?? "");
+  const createMutation = useCreateRound(props.gameId);
+  const updateMutation = useUpdateRound(props.gameId, props.id ?? "");
 
-  const onSubmit = (values: GameInsertType) => {
+  const onSubmit = (values: RoundInsertType) => {
     if (props.id) {
       updateMutation.mutate(values, {
         onSuccess: () => {
@@ -54,7 +56,7 @@ export function GameForm(props: GameFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Input placeholder="Game name" {...field} />
+                <Input placeholder="Round name" {...field} />
               </FormControl>
             </FormItem>
           )}

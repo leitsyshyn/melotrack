@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 
-import { createTrack, updateTrack } from "@/actions/tracks";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -16,9 +15,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { trackInsertSchema } from "@/lib/schemas";
 import { TrackInsertType } from "@/lib/types";
+import { useCreateTrack, useUpdateTrack } from "@/mutations/tracks";
 
 type TrackFormProps = Partial<Omit<TrackInsertType, "roundId">> &
   Pick<TrackInsertType, "roundId"> & {
+    gameId: string;
     onSuccess?: () => void;
   };
 
@@ -34,14 +35,29 @@ export function TrackForm(props: TrackFormProps) {
     },
   });
 
+  const createTrackMutation = useCreateTrack(props.gameId, props.roundId);
+  const updateTrackMutation = useUpdateTrack(
+    props.gameId,
+    props.roundId,
+    props.id ?? "",
+  );
+
   const onSubmit = (values: TrackInsertType) => {
     if (props.id) {
-      updateTrack(values, props.id);
+      updateTrackMutation.mutate(values, {
+        onSuccess: () => {
+          form.reset();
+          props.onSuccess?.();
+        },
+      });
     } else if (props.roundId) {
-      createTrack(values);
+      createTrackMutation.mutate(values, {
+        onSuccess: () => {
+          form.reset();
+          props.onSuccess?.();
+        },
+      });
     }
-    form.reset();
-    props.onSuccess?.();
   };
 
   return (
