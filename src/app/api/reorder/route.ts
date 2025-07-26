@@ -6,6 +6,8 @@ import { roundsTable, tracksTable } from "@/db/schema";
 import { db } from "@/lib/db-node"; // drizzle instance
 
 export const runtime = "nodejs";
+export const preferredRegion = ["fra1"]; // adjust to your Neon region
+export const dynamic = "force-dynamic";
 
 // ─────────────────────────────────────────────────────────────────────────
 // 1. Payload validation
