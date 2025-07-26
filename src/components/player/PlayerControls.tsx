@@ -71,10 +71,10 @@ export function NextRoundButton() {
 }
 
 export function PlayPauseButton() {
-  const { playerState, setPlayerState } = usePlayer();
+  const { playerState, pause, resume } = usePlayer();
   return (
     <Button
-      onClick={() => setPlayerState((ps) => ({ ...ps, playing: !ps.playing }))}
+      onClick={() => (playerState.playing ? pause() : resume())}
       variant="outline"
       size="icon"
       disabled={!playerState.src}
@@ -85,7 +85,7 @@ export function PlayPauseButton() {
 }
 
 export function StopButton({ className }: { className?: string }) {
-  const { track, stop } = usePlayer();
+  const { stop, track } = usePlayer();
   return (
     <Button
       variant="outline"
@@ -102,7 +102,7 @@ export function StopButton({ className }: { className?: string }) {
 export function FullscreenButton() {
   const { track } = usePlayer();
   return (
-    <Button variant="outline" size="icon" disabled={!track}>
+    <Button variant="outline" size="icon" disabled={!track} onClick={() => {}}>
       <Maximize />
     </Button>
   );

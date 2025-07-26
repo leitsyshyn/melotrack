@@ -4,81 +4,93 @@ import { CollisionPriority } from "@dnd-kit/abstract";
 import { arrayMove, move } from "@dnd-kit/helpers";
 import { DragDropProvider, DragOverlay } from "@dnd-kit/react";
 import { isSortable, useSortable } from "@dnd-kit/react/sortable";
-import { addSeconds, format } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
 import { Edit, GripHorizontal, GripVertical, Plus } from "lucide-react";
-import { forwardRef, useEffect, useRef, useState } from "react";
+import { forwardRef, useRef } from "react";
 
 import DeleteDialog from "@/components/games/DeleteDialog";
 import RoundDialog from "@/components/games/RoundDialog";
 import TrackDialog from "@/components/games/TrackDialog";
 import { PlayButton } from "@/components/player/PlayButton";
 import { Button } from "@/components/ui/button";
+import { formatSeconds, roundDuration } from "@/lib/duration";
+import { useReorder } from "@/lib/mutations/reorder";
+import { useDeleteRound } from "@/lib/mutations/rounds";
+import { useDeleteTrack } from "@/lib/mutations/tracks";
 import {
   GameSelectWithRoundsWithTracksType,
   RoundSelectWithTracksType,
   TrackSelectType,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useReorder } from "@/mutations/reorder";
-import { useDeleteRound } from "@/mutations/rounds";
-import { useDeleteTrack } from "@/mutations/tracks";
 
 const toColumnMap = (rounds: RoundSelectWithTracksType[]) =>
   Object.fromEntries(rounds.map((r) => [r.id, r.tracks]));
 
 export function Board({ game }: { game: GameSelectWithRoundsWithTracksType }) {
-  const [data, setData] = useState(game.rounds);
-  const previous = useRef(data);
+  const qc = useQueryClient();
+  const key = ["game", game.id] as const;
   const mutation = useReorder(game.id);
+  const previous = useRef(game.rounds);
 
-  useEffect(() => {
-    setData(game.rounds);
-  }, [game.rounds]);
-
-  if (!data) return null;
+  const rounds =
+    qc.getQueryData<GameSelectWithRoundsWithTracksType>(key)?.rounds ?? [];
 
   return (
     <div>
       <DragDropProvider
         onDragStart={() => {
-          previous.current = data;
+          previous.current = rounds;
         }}
         onDragOver={(event) => {
           const { source } = event.operation;
           if (source?.type === "column") return;
-          setData((current) => {
-            const columns = toColumnMap(current);
-            const moved = move(columns, event);
-            return current.map((round) => ({
-              ...round,
-              tracks: moved[round.id],
-            }));
+
+          qc.setQueryData<GameSelectWithRoundsWithTracksType>(key, (old) => {
+            if (!old) return old;
+            const moved = move(toColumnMap(old.rounds), event);
+            return {
+              ...old,
+              rounds: old.rounds.map((r) => ({
+                ...r,
+                tracks: moved[r.id],
+              })),
+            };
           });
         }}
         onDragEnd={(event) => {
           const { source, target } = event.operation;
+
           if (event.canceled) {
-            setData(previous.current);
+            qc.setQueryData<GameSelectWithRoundsWithTracksType>(key, (old) =>
+              old ? { ...old, rounds: previous.current } : old,
+            );
             return;
           }
+
           if (isSortable(source) && isSortable(target)) {
-            const newData =
+            const newRounds =
               source.type === "column" && target.type === "column"
                 ? arrayMove(
-                    data,
+                    rounds,
                     source.sortable.initialIndex,
                     target.sortable.index,
                   )
-                : data;
-            setData(newData);
-            mutation.mutate(newData);
+                : rounds;
+
+            qc.setQueryData<GameSelectWithRoundsWithTracksType>(key, (old) =>
+              old ? { ...old, rounds: newRounds } : old,
+            );
+
+            mutation.mutate(newRounds);
           }
         }}
       >
         <div className="flex flex-row gap-4 overflow-x-auto pb-4">
-          {data.map((round, columnIndex) => (
-            <RoundColumn key={round.id} index={columnIndex} round={round} />
+          {rounds.map((round, idx) => (
+            <RoundColumn key={round.id} index={idx} round={round} />
           ))}
+
           <div className="flex-1">
             <RoundDialog
               gameId={game.id}
@@ -87,7 +99,7 @@ export function Board({ game }: { game: GameSelectWithRoundsWithTracksType }) {
             >
               <Button
                 className="h-full w-full min-w-100 flex-col justify-center rounded-xl"
-                variant={"outline"}
+                variant="outline"
               >
                 <Plus />
                 Add Round
@@ -95,32 +107,37 @@ export function Board({ game }: { game: GameSelectWithRoundsWithTracksType }) {
             </RoundDialog>
           </div>
         </div>
+
         <DragOverlay>
           {(source) => {
             if (source.type === "column") {
-              const round = data.find((r) => r.id === source.id);
-              if (!round) return null;
+              const round = rounds.find((r) => r.id === source.id);
               return (
-                <Round
-                  round={round}
-                  isDragging={source.isDragging}
-                  className="data-[dragging=true]:scale-102 data-[dragging=true]:shadow-2xl"
-                />
+                round && (
+                  <Round
+                    round={round}
+                    isDragging={source.isDragging}
+                    className="data-[dragging=true]:scale-102 data-[dragging=true]:shadow-2xl"
+                  />
+                )
               );
-            } else if (source.type === "item") {
-              const track = data
+            }
+            if (source.type === "item") {
+              const track = rounds
                 .flatMap((r) => r.tracks)
                 .find((t) => t.id === source.id);
-              if (!track) return null;
               return (
-                <Track
-                  track={track}
-                  gameId={game.id}
-                  isDragging={source.isDragging}
-                  className="data-[dragging=true]:scale-102 data-[dragging=true]:shadow-2xl"
-                />
+                track && (
+                  <Track
+                    track={track}
+                    gameId={game.id}
+                    isDragging={source.isDragging}
+                    className="data-[dragging=true]:scale-102 data-[dragging=true]:shadow-2xl"
+                  />
+                )
               );
-            } else return null;
+            }
+            return null;
           }}
         </DragOverlay>
       </DragDropProvider>
@@ -182,6 +199,16 @@ const Round = forwardRef<HTMLDivElement, RoundProps>(function Round(
         </div>
         <div className="flex items-center">
           <div className="item-center flex opacity-0 transition-all duration-200 group-hover/round:opacity-100">
+            <TrackDialog
+              gameId={round.gameId}
+              roundId={round.id}
+              dialogTitle={`Add Track`}
+              dialogDescription={`Add a new track to ${round.name}`}
+            >
+              <Button variant="ghost" size={"icon"}>
+                <Plus />
+              </Button>
+            </TrackDialog>
             <RoundDialog
               {...round}
               dialogTitle="Edit Round"
@@ -196,6 +223,10 @@ const Round = forwardRef<HTMLDivElement, RoundProps>(function Round(
               dialogTitle="Delete Round"
               dialogDescription="Are you sure you want to delete this round?"
             />
+          </div>
+          <div className="text-muted-foreground flex items-center gap-1 px-2 text-sm group-hover/round:hidden">
+            <span>{formatSeconds(roundDuration(round))}</span>/
+            <span>{round.gap}s</span>
           </div>
           <Button
             variant={"ghost"}
@@ -231,11 +262,6 @@ const Round = forwardRef<HTMLDivElement, RoundProps>(function Round(
     </section>
   );
 });
-
-function formatSeconds(sec: number) {
-  const d = addSeconds(new Date(0), sec);
-  return format(d, sec >= 3600 ? "H:mm:ss" : "m:ss");
-}
 
 export interface TrackProps {
   track: TrackSelectType;

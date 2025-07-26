@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { createRound, deleteRound, updateRound } from "@/actions/rounds";
+import { createRound, deleteRound, updateRound } from "@/lib/actions/rounds";
 import { RoundUpdateType } from "@/lib/types";
 
 export function useCreateRound(gameId: string) {
@@ -21,6 +21,7 @@ export function useUpdateRound(gameId: string, roundId: string) {
   return useMutation({
     mutationFn: (round: RoundUpdateType) => updateRound(round, roundId),
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["games"] });
       queryClient.invalidateQueries({ queryKey: ["game", gameId] });
       queryClient.invalidateQueries({ queryKey: ["rounds"] });
       queryClient.invalidateQueries({ queryKey: ["round", roundId] });

@@ -2,7 +2,7 @@
 
 import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 
-import { api } from "@/api/axios";
+import { getTrackById } from "@/lib/fetchers/tracks";
 import { TrackSelectType } from "@/lib/types";
 
 export function useTrackById(
@@ -11,7 +11,7 @@ export function useTrackById(
 ) {
   return useQuery<TrackSelectType>({
     queryKey: ["track", trackId],
-    queryFn: () => api.get(`/tracks/${trackId}`).then((res) => res.data),
+    queryFn: () => getTrackById(trackId),
     ...options,
   });
 }

@@ -10,12 +10,13 @@ import {
   FormControl,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useCreateTrack, useUpdateTrack } from "@/lib/mutations/tracks";
 import { trackInsertSchema } from "@/lib/schemas";
 import { TrackInsertType } from "@/lib/types";
-import { useCreateTrack, useUpdateTrack } from "@/mutations/tracks";
 
 type TrackFormProps = Partial<Omit<TrackInsertType, "roundId">> &
   Pick<TrackInsertType, "roundId"> & {
@@ -96,14 +97,16 @@ export function TrackForm(props: TrackFormProps) {
             name="start"
             render={({ field }) => (
               <FormItem className="flex-1">
+                <FormLabel>Start (s)</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
                     placeholder="Start (s)"
                     step="1"
                     {...field}
-                    value={field.value ?? 0}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    onChange={(e) =>
+                      field.onChange(Number(e.target.value) || "")
+                    }
                   />
                 </FormControl>
                 <FormMessage />
@@ -115,16 +118,19 @@ export function TrackForm(props: TrackFormProps) {
             name="end"
             render={({ field }) => (
               <FormItem className="flex-1">
+                <FormLabel>End (s)</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
                     placeholder="End (s)"
                     step="1"
                     {...field}
-                    value={field.value ?? 0}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    onChange={(e) =>
+                      field.onChange(Number(e.target.value) || "")
+                    }
                   />
                 </FormControl>
+
                 <FormMessage />
               </FormItem>
             )}

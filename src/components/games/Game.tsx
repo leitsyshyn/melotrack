@@ -1,16 +1,18 @@
 "use client";
 
-import { Edit } from "lucide-react";
+import { Edit, Plus } from "lucide-react";
 
 import { Board } from "@/components/games/Board";
 import DeleteDialog from "@/components/games/DeleteDialog";
 import GameDialog from "@/components/games/GameDialog";
+import RoundDialog from "@/components/games/RoundDialog";
 import { PlayButton } from "@/components/player/PlayButton";
 import { Button } from "@/components/ui/button";
+import { formatSeconds, gameDuration } from "@/lib/duration";
+import { useDeleteGame } from "@/lib/mutations/games";
+import { useGameByIdWithRoundsWithTracks } from "@/lib/queries/games";
 import { GameSelectType } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useDeleteGame } from "@/mutations/games";
-import { useGameByIdWithRoundsWithTracks } from "@/queries/games";
 
 export interface GameProps {
   game: GameSelectType;
@@ -39,6 +41,15 @@ export default function Game({ className, game }: GameProps) {
             <h1>{data?.name}</h1>
           </div>
           <div className="item-center flex opacity-0 transition-all duration-200 group-hover/game:opacity-100">
+            <RoundDialog
+              gameId={game.id}
+              dialogTitle="Add Round"
+              dialogDescription="Add a new round to this game"
+            >
+              <Button size={"icon"} variant="ghost">
+                <Plus />
+              </Button>
+            </RoundDialog>
             <GameDialog
               {...game}
               dialogTitle="Edit Game"
@@ -53,6 +64,10 @@ export default function Game({ className, game }: GameProps) {
               dialogTitle="Delete Game"
               dialogDescription="Are you sure you want to delete this game?"
             />
+          </div>
+          <div className="text-muted-foreground flex items-center gap-1 px-2 text-sm group-hover/game:hidden">
+            <span>{formatSeconds(gameDuration(data))}</span>/{" "}
+            <span>{game.gap}s</span>
           </div>
         </div>
       </div>

@@ -5,11 +5,18 @@ import { Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useCreateGame, useUpdateGame } from "@/lib/mutations/games";
 import { gameInsertSchema } from "@/lib/schemas";
 import { GameInsertType } from "@/lib/types";
-import { useCreateGame, useUpdateGame } from "@/mutations/games";
 
 type GameFormProps = Partial<GameInsertType> & {
   onSuccess?: () => void;
@@ -56,6 +63,25 @@ export function GameForm(props: GameFormProps) {
               <FormControl>
                 <Input placeholder="Game name" {...field} />
               </FormControl>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="gap"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Gap (s)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  placeholder="Gap (s)"
+                  step="1"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value) || "")}
+                />
+              </FormControl>
+              <FormMessage />
             </FormItem>
           )}
         />

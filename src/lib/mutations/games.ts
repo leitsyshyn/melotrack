@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { createGame, deleteGame, updateGame } from "@/actions/games";
+import { createGame, deleteGame, updateGame } from "@/lib/actions/games";
 import { GameUpdateType } from "@/lib/types";
 
 export function useCreateGame() {

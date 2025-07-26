@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { createTrack, deleteTrack, updateTrack } from "@/actions/tracks";
+import { createTrack, deleteTrack, updateTrack } from "@/lib/actions/tracks";
 import { TrackUpdateType } from "@/lib/types";
 
 export function useCreateTrack(gameId?: string, roundId?: string) {
@@ -12,7 +12,6 @@ export function useCreateTrack(gameId?: string, roundId?: string) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["game", gameId] });
       queryClient.invalidateQueries({ queryKey: ["round", roundId] });
-      queryClient.invalidateQueries({ queryKey: ["tracks"] });
     },
   });
 }
@@ -28,7 +27,6 @@ export function useUpdateTrack(
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["game", gameId] });
       queryClient.invalidateQueries({ queryKey: ["round", roundId] });
-      queryClient.invalidateQueries({ queryKey: ["tracks"] });
       queryClient.invalidateQueries({ queryKey: ["track", trackId] });
     },
   });
@@ -45,7 +43,6 @@ export function useDeleteTrack(
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["game", gameId] });
       queryClient.invalidateQueries({ queryKey: ["round", roundId] });
-      queryClient.invalidateQueries({ queryKey: ["tracks"] });
       queryClient.invalidateQueries({ queryKey: ["track", trackId] });
     },
   });

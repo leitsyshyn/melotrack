@@ -7,7 +7,7 @@ import Game from "@/components/games/Game";
 import GameDialog from "@/components/games/GameDialog";
 import { Player } from "@/components/player/Player";
 import { Button } from "@/components/ui/button";
-import { useGames } from "@/queries/games";
+import { useGames } from "@/lib/queries/games";
 
 export default function CreatePage() {
   const { data } = useGames();

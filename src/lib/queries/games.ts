@@ -2,7 +2,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 
-import { api } from "@/api/axios";
+import {
+  getGameByIdWithRoundsWithTracks,
+  getGames,
+} from "@/lib/fetchers/games";
 import {
   GameSelectType,
   GameSelectWithRoundsWithTracksType,
@@ -11,13 +14,13 @@ import {
 export function useGames() {
   return useQuery<GameSelectType[]>({
     queryKey: ["games"],
-    queryFn: () => api.get("/games").then((res) => res.data),
+    queryFn: getGames,
   });
 }
 
 export function useGameByIdWithRoundsWithTracks(gameId: string) {
   return useQuery<GameSelectWithRoundsWithTracksType>({
     queryKey: ["game", gameId],
-    queryFn: () => api.get(`/games/${gameId}`).then((res) => res.data),
+    queryFn: () => getGameByIdWithRoundsWithTracks(gameId),
   });
 }

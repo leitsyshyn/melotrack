@@ -5,13 +5,16 @@ import { usePlayer } from "@/components/player/PlayerContext";
 import PlayerControls from "@/components/player/PlayerControls";
 import { cn } from "@/lib/utils";
 
+// import { usePlayerStore } from "@/stores/playerStore";
+
 interface PlayerProps {
   className?: string;
 }
 
 export function Player({ className }: PlayerProps) {
-  const { track, playerState, setPlayerRef, playNextTrack } = usePlayer();
-  const { src, playing, controls } = playerState;
+  const { playerRef, playerState, setPlayerRef, handleEnded, track } =
+    usePlayer();
+  const { src, playing } = playerState;
 
   return (
     <div
@@ -23,10 +26,13 @@ export function Player({ className }: PlayerProps) {
       <ReactPlayer
         key={`${track?.id}-${track?.start}-${track?.end}`}
         ref={setPlayerRef}
-        style={{ width: "100%", height: "auto", aspectRatio: "16/9" }}
+        style={{
+          width: "100%",
+          height: "auto",
+          aspectRatio: "16/9",
+        }}
         src={src}
         playing={playing}
-        controls={controls}
         config={{
           youtube: {
             start: track?.start,
@@ -38,8 +44,22 @@ export function Player({ className }: PlayerProps) {
             startAt: track?.start,
           },
         }}
-        onEnded={playNextTrack}
-        className="rounded-xl rounded-b-none"
+        onReady={() => {
+          if (track?.start && playerRef.current) {
+            playerRef.current.currentTime = track.start;
+          }
+        }}
+        onTimeUpdate={() => {
+          if (
+            playerRef?.current?.currentTime &&
+            track?.end &&
+            playerRef.current.currentTime >= track.end
+          ) {
+            handleEnded();
+          }
+        }}
+        // onEnded={playNextTrack}
+        className="aspect-16/9 w-full rounded-xl rounded-b-none"
       />
       <PlayerControls />
     </div>

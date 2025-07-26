@@ -2,7 +2,7 @@
 
 import { UseQueryOptions, useQuery } from "@tanstack/react-query";
 
-import { api } from "@/api/axios";
+import { getRoundByIdWithTracks } from "@/lib/fetchers/rounds";
 import { RoundSelectWithTracksType } from "@/lib/types";
 
 export function useRoundByIdWithTracks(
@@ -14,7 +14,7 @@ export function useRoundByIdWithTracks(
 ) {
   return useQuery<RoundSelectWithTracksType>({
     queryKey: ["round", roundId],
-    queryFn: () => api.get(`/rounds/${roundId}`).then((res) => res.data),
+    queryFn: () => getRoundByIdWithTracks(roundId),
     ...options,
   });
 }

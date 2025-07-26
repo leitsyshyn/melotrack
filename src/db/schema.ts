@@ -21,7 +21,8 @@ export const roundsTable = pgTable(
     id: uuid().defaultRandom().primaryKey(),
     gameId: uuid()
       .notNull()
-      .references(() => gamesTable.id),
+      .references(() => gamesTable.id, { onDelete: "cascade" }),
+
     name: varchar({ length: 255 }).notNull(),
     gap: integer().notNull().default(3),
     position: serial().notNull(),
@@ -41,7 +42,7 @@ export const tracksTable = pgTable(
     id: uuid().defaultRandom().primaryKey(),
     roundId: uuid()
       .notNull()
-      .references(() => roundsTable.id),
+      .references(() => roundsTable.id, { onDelete: "cascade" }),
     position: serial().notNull(),
     url: varchar({ length: 2048 }).notNull(),
     start: integer().notNull(),
