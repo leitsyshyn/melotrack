@@ -50,6 +50,8 @@ export async function POST(req: NextRequest) {
 
     // 204 = “No Content” → nothing to JSON-encode
     return new NextResponse(null, { status: 204 });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     console.error("Reorder failed:", {
       message: err?.message,
