@@ -40,6 +40,7 @@ type PlayerState = {
   playbackRate: number;
   loop: boolean;
   seeking: boolean;
+  controls: boolean;
   loadedSeconds: number;
   playedSeconds: number;
 };
@@ -96,6 +97,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     playbackRate: 1,
     seeking: false,
     loadedSeconds: 0,
+    controls: true,
     playedSeconds: 0,
     loop: false,
   });

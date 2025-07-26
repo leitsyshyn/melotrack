@@ -31,6 +31,7 @@ export function Player({ className }: PlayerProps) {
           height: "auto",
           aspectRatio: "16/9",
         }}
+        controls={playerState.controls}
         src={src}
         playing={playing}
         config={{
