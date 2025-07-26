@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { roundsTable, tracksTable } from "@/db/schema";
-import { db } from "@/lib/db"; // drizzle instance
+import { db } from "@/lib/db-node"; // drizzle instance
+
+export const runtime = "nodejs";
 
 // ─────────────────────────────────────────────────────────────────────────
 // 1. Payload validation
