@@ -50,8 +50,14 @@ export async function POST(req: NextRequest) {
 
     // 204 = “No Content” → nothing to JSON-encode
     return new NextResponse(null, { status: 204 });
-  } catch (err) {
-    console.error("Reorder failed:", err);
+  } catch (err: any) {
+    console.error("Reorder failed:", {
+      message: err?.message,
+      code: err?.code,
+      detail: err?.detail,
+      table: err?.table,
+      constraint: err?.constraint,
+    });
     return NextResponse.json(
       { error: "Failed to persist order" },
       { status: 500 },
